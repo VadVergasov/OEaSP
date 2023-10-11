@@ -7,6 +7,9 @@
 #include <wchar.h>
 #include <tchar.h>
 #include <cmath>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 #ifdef UNICODE_WAS_UNDEFINED
 #undef UNICODE
@@ -15,6 +18,8 @@
 #define PI acos(-1)
 #define ID_CHECK_BOX 228
 #define WS_RADIOBUTTON_PARAMS WS_VISIBLE | WS_CHILD | BS_RADIOBUTTON
+CONST WCHAR *fileName = L"log.txt";
+CONST long long FILESIZE = 1024 * 1024;
 
 const wchar_t *colors[3] = {
 	L"Red",
@@ -44,6 +49,10 @@ const int figures_id[4] = {
 
 int RGB[3];
 int x_coord = 0, y_coord = 0;
+HANDLE hFile = NULL;
+HANDLE hMapFile = NULL;
+LPVOID pMappedData = NULL;
+size_t mappedDataSize = 0;
 
 HWND check_box,
 child_hwnd,
@@ -56,10 +65,86 @@ HINSTANCE hInst;
 
 HHOOK mouseHook = NULL;
 
+void UninitializeMappingFile() {
+	if (pMappedData != NULL) {
+		UnmapViewOfFile(pMappedData);
+		pMappedData = NULL;
+	}
+	if (hMapFile != NULL) {
+		CloseHandle(hMapFile);
+		hMapFile = NULL;
+	}
+	if (hFile != INVALID_HANDLE_VALUE) {
+		CloseHandle(hFile);
+		hFile = INVALID_HANDLE_VALUE;
+	}
+}
+
+VOID InitializeMappingFile() {
+	hFile = CreateFile(
+		fileName,
+		GENERIC_READ | GENERIC_WRITE,
+		0,
+		NULL,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+
+	if (hFile == INVALID_HANDLE_VALUE) {
+		MessageBox(NULL, L"CreateFile failed!", L"Error", MB_ICONERROR);
+		return;
+	}
+	hMapFile = CreateFileMapping(
+		hFile,
+		NULL,
+		PAGE_READWRITE,
+		0,
+		FILESIZE,
+		NULL
+	);
+
+	if (hMapFile == NULL) {
+		MessageBox(NULL, L"CreateFileMapping failed!", L"Error", MB_ICONERROR);
+		CloseHandle(hFile);
+		return;
+	}
+	pMappedData = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, FILESIZE);
+	if (pMappedData == NULL) {
+		MessageBox(NULL, L"MapViewOfFile failed!", L"Error", MB_ICONERROR);
+		CloseHandle(hMapFile);
+		CloseHandle(hFile);
+		return;
+	}
+}
+
+void RecordPress(const std::string &actionString) {
+	if (pMappedData != NULL) {
+		SYSTEMTIME currentTime;
+		GetLocalTime(&currentTime);
+		std::ostringstream os;
+		os << "[" << std::setw(2) << std::setfill('0') << std::to_string(currentTime.wHour) << ":" <<
+			std::setw(2) << std::setfill('0') << std::to_string(currentTime.wMinute) << ":" << std::setw(2) << std::setfill('0') << std::to_string(currentTime.wSecond);
+		std::string time = os.str();
+		std::string keyInfo = time + "] - " + actionString + "\n";
+		SIZE_T dataSize = keyInfo.size() * sizeof(CHAR);
+		OutputDebugString(std::to_wstring(dataSize).c_str());
+		OutputDebugString(L"\n");
+		if (mappedDataSize + dataSize >= FILESIZE) {
+			UninitializeMappingFile();
+			InitializeMappingFile();
+			mappedDataSize = 0;
+		}
+		memcpy((CHAR *)pMappedData + mappedDataSize, keyInfo.c_str(), dataSize);
+		mappedDataSize += dataSize;
+	}
+}
+
 LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	if (nCode == HC_ACTION) {
 		if (wParam == WM_LBUTTONDOWN) {
 			OutputDebugString(L"Clicked\n");
+			RecordPress("Clicked");
 		}
 	}
 	return CallNextHookEx(mouseHook, nCode, wParam, lParam);
@@ -293,6 +378,7 @@ int WINAPI WinMain(
 		return 0;
 	}
 	hInst = hInstance;
+	InitializeMappingFile();
 	SetKeyboardHook();
 	ShowWindow(hwnd_main, nCmdShow);
 	UpdateWindow(hwnd_main);
@@ -301,5 +387,6 @@ int WINAPI WinMain(
 		DispatchMessage(&msg);
 	}
 	UnhookKeyboardHook();
+	UninitializeMappingFile();
 	return msg.wParam;
 }
