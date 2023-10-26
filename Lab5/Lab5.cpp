@@ -1,4 +1,4 @@
-#include <windows.h>
+п»ї#include <windows.h>
 #include <iostream>
 #include <string>
 #include <tchar.h>
@@ -49,7 +49,7 @@ bool GetRegistryValue(HKEY hKey, LPCWSTR subKey, LPCWSTR valueName, DWORD &resul
 }
 
 void CreateValue(HWND hWnd, HKEY hKey, LPCWSTR subKey, LPCWSTR valueName, DWORD value) {
-    int result = MessageBox(hWnd, L"Значение DefaultTTL не равно 65. Хотите создать его?", L"Результат проверки реестра", MB_ICONQUESTION | MB_YESNO);
+    int result = MessageBox(hWnd, L"Р—РЅР°С‡РµРЅРёРµ DefaultTTL РЅРµ СЂР°РІРЅРѕ 65. РҐРѕС‚РёС‚Рµ СЃРѕР·РґР°С‚СЊ РµРіРѕ?", L"Р РµР·СѓР»СЊС‚Р°С‚ РїСЂРѕРІРµСЂРєРё СЂРµРµСЃС‚СЂР°", MB_ICONQUESTION | MB_YESNO);
     if (result == IDYES) {
         HKEY hKey;
         auto result_code = RegOpenKeyEx(HKEY_LOCAL_MACHINE, subKey, 0, KEY_WRITE, &hKey);
@@ -57,16 +57,16 @@ void CreateValue(HWND hWnd, HKEY hKey, LPCWSTR subKey, LPCWSTR valueName, DWORD 
             DWORD newValue = 65;
             result_code = RegSetValueEx(hKey, valueName, 0, REG_DWORD, (const BYTE *)&newValue, sizeof(newValue));
             if (result_code == ERROR_SUCCESS) {
-                LogEvent(L"Настройка создана!", EVENTLOG_SUCCESS);
-                MessageBox(hWnd, L"Значение DefaultTTL было успешно создано с значением 65.", L"Результат создания значения", MB_ICONINFORMATION);
+                LogEvent(L"РќР°СЃС‚СЂРѕР№РєР° СЃРѕР·РґР°РЅР°!", EVENTLOG_SUCCESS);
+                MessageBox(hWnd, L"Р—РЅР°С‡РµРЅРёРµ DefaultTTL Р±С‹Р»Рѕ СѓСЃРїРµС€РЅРѕ СЃРѕР·РґР°РЅРѕ СЃ Р·РЅР°С‡РµРЅРёРµРј 65.", L"Р РµР·СѓР»СЊС‚Р°С‚ СЃРѕР·РґР°РЅРёСЏ Р·РЅР°С‡РµРЅРёСЏ", MB_ICONINFORMATION);
             } else {
-                LogEvent(L"Ошибка при создании значения DefaultTTL: " + GetErrorMessage(result_code), EVENTLOG_ERROR_TYPE);
-                MessageBox(hWnd, (L"Ошибка при создании значения DefaultTTL: " + GetErrorMessage(result_code)).c_str(), L"Результат создания значения", MB_ICONERROR);
+                LogEvent(L"РћС€РёР±РєР° РїСЂРё СЃРѕР·РґР°РЅРёРё Р·РЅР°С‡РµРЅРёСЏ DefaultTTL: " + GetErrorMessage(result_code), EVENTLOG_ERROR_TYPE);
+                MessageBox(hWnd, (L"РћС€РёР±РєР° РїСЂРё СЃРѕР·РґР°РЅРёРё Р·РЅР°С‡РµРЅРёСЏ DefaultTTL: " + GetErrorMessage(result_code)).c_str(), L"Р РµР·СѓР»СЊС‚Р°С‚ СЃРѕР·РґР°РЅРёСЏ Р·РЅР°С‡РµРЅРёСЏ", MB_ICONERROR);
             }
             RegCloseKey(hKey);
         } else {
-            LogEvent(L"Ошибка при создани: " + GetErrorMessage(result_code), EVENTLOG_ERROR_TYPE);
-            MessageBox(hWnd, GetErrorMessage(result_code).c_str(), L"Ошибка", MB_ICONERROR);
+            LogEvent(L"РћС€РёР±РєР° РїСЂРё СЃРѕР·РґР°РЅРё: " + GetErrorMessage(result_code), EVENTLOG_ERROR_TYPE);
+            MessageBox(hWnd, GetErrorMessage(result_code).c_str(), L"РћС€РёР±РєР°", MB_ICONERROR);
         }
     }
 }
@@ -79,8 +79,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         case WM_CREATE:
             if (GetRegistryValue(HKEY_LOCAL_MACHINE, registryPath, valueName, value)) {
                 if (value == 65) {
-                    LogEvent(L"Настройка уже существует", EVENTLOG_INFORMATION_TYPE);
-                    MessageBox(hWnd, L"Значение 65 для DefaultTTL уже существует в реестре.", L"Результат проверки реестра", MB_ICONINFORMATION);
+                    LogEvent(L"РќР°СЃС‚СЂРѕР№РєР° СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚", EVENTLOG_INFORMATION_TYPE);
+                    MessageBox(hWnd, L"Р—РЅР°С‡РµРЅРёРµ 65 РґР»СЏ DefaultTTL СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ РІ СЂРµРµСЃС‚СЂРµ.", L"Р РµР·СѓР»СЊС‚Р°С‚ РїСЂРѕРІРµСЂРєРё СЂРµРµСЃС‚СЂР°", MB_ICONINFORMATION);
                 } else {
                     CreateValue(hWnd, HKEY_LOCAL_MACHINE, registryPath, valueName, 65);
                 }
@@ -105,7 +105,7 @@ INT WINAPI WinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrevInstance, _In_ 
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("RegistryCheckApp"), NULL };
     RegisterClassEx(&wc);
     hInstance = hInst;
-    hMainWindow = CreateWindow(wc.lpszClassName, L"Проверка реестра", WS_OVERLAPPEDWINDOW, 100, 100, 400, 200, NULL, NULL, wc.hInstance, NULL);
+    hMainWindow = CreateWindow(wc.lpszClassName, L"РџСЂРѕРІРµСЂРєР° СЂРµРµСЃС‚СЂР°", WS_OVERLAPPEDWINDOW, 100, 100, 400, 200, NULL, NULL, wc.hInstance, NULL);
     ShowWindow(hMainWindow, nCmdShow);
     UpdateWindow(hMainWindow);
     MSG msg;
